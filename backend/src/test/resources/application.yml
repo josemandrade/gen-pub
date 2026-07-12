@@ -1,0 +1,31 @@
+spring:
+  profiles:
+    active: test
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+  flyway:
+    enabled: false
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  h2:
+    console:
+      enabled: false
+
+app:
+  jwt:
+    secret: test-secret-key-that-is-at-least-256-bits-long-for-testing
+    expiration-ms: 3600000
+  storage:
+    upload-dir: build/test-uploads
+  ai:
+    openai:
+      api-key:

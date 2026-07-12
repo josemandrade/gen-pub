@@ -1,7 +1,15 @@
+// ============================================================
+// pages/Dashboard.tsx — Pantalla principal después del login
+// ============================================================
+// Muestra tarjetas con resúmenes (campañas, anuncios, pendientes).
+// Por ahora son valores fijos (0) - se pueden conectar al backend
+// cuando se implementen los endpoints de estadísticas.
+
 import { useAuthStore } from '../store/authStore'
 import { Card, CardContent, CardHeader } from '../components/ui/Card'
 
 export default function Dashboard() {
+  // Toma solo "user" del store global de autenticación
   const user = useAuthStore((s) => s.user)
 
   return (
@@ -11,6 +19,7 @@ export default function Dashboard() {
         <p className="text-gray-500">Bienvenido, {user?.name}</p>
       </div>
 
+      {/* Grid de tarjetas de resumen */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>

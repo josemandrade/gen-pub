@@ -1,3 +1,9 @@
+// ============================================================
+// components/auth/RegisterForm.tsx — Formulario de registro
+// ============================================================
+// Misma estructura que LoginForm pero con campo "nombre"
+// y validación de 6+ caracteres para la contraseña.
+
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'

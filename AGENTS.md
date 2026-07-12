@@ -5,7 +5,8 @@
 - **Backend**: Java 17, Spring Boot 3, Maven, PostgreSQL, Flyway, Spring Security + JWT
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, TanStack Query, Zustand, React Hook Form + Zod
 - **Infrastructure**: Docker, perfiles Spring (dev/prod), cloud-ready
-- **IA**: Integración con APIs de generación de texto e imágenes (OpenAI, etc.)
+- **IA**: Integración con OpenAI para generación de copy y sugerencias de imágenes
+- **Storage**: Local filesystem (con interfaz intercambiable a S3 en el futuro)
 
 ## Structure
 
@@ -14,6 +15,9 @@ generador-publicidad/
 ├── backend/       # Spring Boot app
 ├── frontend/      # React + Vite app
 ├── docker-compose.yml
+├── docker-compose.prod.yml
+├── Makefile
+├── deploy.sh
 └── docs/
 ```
 
@@ -37,8 +41,18 @@ cd backend && ./mvnw spring-boot:run
 # Frontend (requiere Node 18+)
 cd frontend && npm run dev
 
-# Full stack (Docker)
-docker compose up
+# Tests backend
+cd backend && ./mvnw test -B
+
+# Full stack (Docker, desarrollo)
+docker compose up --build
+
+# Producción (VPS con Docker)
+cp .env.prod.example .env.prod   # editar secrets
+make prod                         # o: docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+# Deploy (git pull + rebuild)
+./deploy.sh
 ```
 
 ## Conventions

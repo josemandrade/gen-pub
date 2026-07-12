@@ -1,3 +1,7 @@
+// ============================================================
+// pages/Register.tsx — Página de registro de usuario
+// ============================================================
+
 import { Link } from 'react-router-dom'
 import { RegisterForm } from '../components/auth/RegisterForm'
 

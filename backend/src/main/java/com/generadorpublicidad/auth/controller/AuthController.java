@@ -26,4 +26,10 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<AuthResponse.UserDto> me(org.springframework.security.core.Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
+        return ResponseEntity.ok(new AuthResponse.UserDto(user.getId(), user.getName(), user.getEmail(), user.getRole()));
+    }
 }

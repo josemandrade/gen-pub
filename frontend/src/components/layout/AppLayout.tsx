@@ -1,3 +1,12 @@
+// ============================================================
+// components/layout/AppLayout.tsx — Layout principal (sidebar)
+// ============================================================
+// <Outlet /> es de React Router: renderiza el contenido de
+// la ruta hija dentro de este layout.
+//
+// El sidebar se muestra en desktop (lg:static) y en mobile
+// se oculta/despliega con un botón menú.
+
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { Button } from '../ui/Button'
@@ -7,7 +16,7 @@ import { useState } from 'react'
 export function AppLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)  // estado del menú mobile
 
   const handleLogout = () => {
     logout()
@@ -16,28 +25,32 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile header */}
+      {/* ===== HEADER MOBILE (visible solo en pantallas chicas) ===== */}
       <header className="lg:hidden flex items-center justify-between border-b bg-white px-4 py-3">
         <button onClick={() => setSidebarOpen(!sidebarOpen)}>
           {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
         <h1 className="text-lg font-semibold">Generador de Publicidad</h1>
-        <div className="w-6" />
+        <div className="w-6" /> {/* spacer para centrar el título */}
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
+        {/* ===== SIDEBAR ===== */}
+        {/* En mobile: fixed + transform para animar entrada/salida */}
+        {/* En desktop (lg): static, siempre visible */}
         <aside
           className={`${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           } fixed inset-y-0 left-0 z-40 w-64 transform border-r bg-white transition-transform lg:static lg:translate-x-0`}
         >
           <div className="flex h-full flex-col">
+            {/* Logo (solo desktop) */}
             <div className="hidden lg:flex items-center gap-2 border-b px-6 py-4">
               <FileText className="h-6 w-6 text-blue-600" />
               <span className="text-lg font-semibold">Gen. Publicidad</span>
             </div>
 
+            {/* Navegación */}
             <nav className="flex-1 space-y-1 px-3 py-4">
               <Link
                 to="/"
@@ -54,6 +67,13 @@ export function AppLayout() {
                 Campañas
               </Link>
               <Link
+                to="/ads"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                onClick={() => setSidebarOpen(false)}
+              >
+                Mis Anuncios
+              </Link>
+              <Link
                 to="/ads/new"
                 className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                 onClick={() => setSidebarOpen(false)}
@@ -62,6 +82,7 @@ export function AppLayout() {
               </Link>
             </nav>
 
+            {/* Footer del sidebar: datos del usuario + botón salir */}
             <div className="border-t px-4 py-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm">
@@ -76,7 +97,7 @@ export function AppLayout() {
           </div>
         </aside>
 
-        {/* Overlay for mobile */}
+        {/* ===== OVERLAY MOBILE (fondo oscuro al abrir menú) ===== */}
         {sidebarOpen && (
           <div
             className="fixed inset-0 z-30 bg-black/20 lg:hidden"
@@ -84,7 +105,8 @@ export function AppLayout() {
           />
         )}
 
-        {/* Main content */}
+        {/* ===== CONTENIDO PRINCIPAL ===== */}
+        {/* <Outlet /> renderiza la página activa según la ruta */}
         <main className="flex-1 p-6 lg:p-8">
           <Outlet />
         </main>

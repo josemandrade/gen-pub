@@ -3,6 +3,10 @@ spring:
     name: generador-publicidad
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
   jpa:
     hibernate:
       ddl-auto: validate
@@ -22,6 +26,8 @@ app:
   jwt:
     secret: ${JWT_SECRET:defaultSecretKeyThatMustBeChangedInProduction123}
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  storage:
+    upload-dir: ${STORAGE_UPLOAD_DIR:uploads}
   ai:
     openai:
       api-key: ${OPENAI_API_KEY:}

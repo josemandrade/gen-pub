@@ -1,3 +1,11 @@
+/* ============================================================
+   index.css — Estilos globales
+   ============================================================
+   Tailwind CSS funciona con "directivas":
+   - @tailwind base    → estilos base (reset)
+   - @tailwind components → clases de componentes
+   - @tailwind utilities → clases utilitarias (flex, text-lg, etc.) */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
