@@ -1,14 +1,3 @@
-// ============================================================
-// pages/Ads.tsx — Historial de anuncios del usuario
-// ============================================================
-// useMyAds() → hook que llama a GET /api/ads/my con TanStack Query.
-//
-// El hook devuelve { data, isLoading } donde:
-//   - data: array de anuncios (o undefined si cargando)
-//   - isLoading: true mientras se hace la petición
-//
-// Cada tarjeta de anuncio es clickeable → navega a /ads/:id
-
 import { useMyAds } from '../hooks/useAds'
 import { Card, CardContent, CardHeader } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
@@ -21,71 +10,71 @@ export default function Ads() {
 
   return (
     <div className="space-y-6">
-      {/* Encabezado con botón "Nuevo Anuncio" */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Historial de Anuncios</h1>
-          <p className="text-gray-500">Todos los anuncios creados</p>
+          <p className="text-sm font-medium text-stone-400 tracking-wider uppercase">Historial</p>
+          <h1 className="font-display text-3xl font-bold text-stone-900 mt-1">Mis Anuncios</h1>
         </div>
         <Button onClick={() => navigate('/ads/new')}>
-          <Plus className="h-4 w-4 mr-1" /> Nuevo Anuncio
+          <Plus className="h-4 w-4 mr-1.5" /> Nuevo Anuncio
         </Button>
       </div>
 
       {isLoading ? (
-        <p className="text-gray-500">Cargando...</p>
+        <div className="flex justify-center py-12">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+        </div>
       ) : ads && ads.length > 0 ? (
-        // Grid de tarjetas de anuncios
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {ads.map((ad) => (
             <Card
               key={ad.id}
-              className="hover:shadow-md transition-shadow cursor-pointer"
-              onClick={() => navigate(`/ads/${ad.id}`)}   // navega al detalle
+              className="hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
+              onClick={() => navigate(`/ads/${ad.id}`)}
             >
-              {/* Miniatura del primer archivo */}
               {ad.media.length > 0 && (
-                <div className="aspect-video overflow-hidden rounded-t-xl bg-gray-100">
+                <div className="aspect-video overflow-hidden bg-stone-100">
                   {ad.media[0]!.mediaType === 'VIDEO' ? (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Video className="h-10 w-10 text-gray-400" />
+                      <Video className="h-10 w-10 text-stone-400" />
                     </div>
                   ) : (
-                    <img src={ad.media[0]!.url} alt="" className="w-full h-full object-cover" />
+                    <img src={ad.media[0]!.url} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                   )}
                 </div>
               )}
               <CardHeader>
-                <h3 className="font-semibold text-gray-900 truncate">{ad.title}</h3>
+                <h3 className="font-display font-semibold text-stone-900 truncate">{ad.title}</h3>
               </CardHeader>
               <CardContent className="space-y-2">
                 {ad.description && (
-                  <p className="text-sm text-gray-500 line-clamp-2">{ad.description}</p>
+                  <p className="text-sm text-stone-500 line-clamp-2 leading-relaxed">{ad.description}</p>
                 )}
-                {/* Estado + cantidad de archivos */}
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <span className={`px-2 py-0.5 rounded-full ${
-                    ad.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                    ad.status === 'GENERATED' ? 'bg-blue-100 text-blue-700' :
-                    ad.status === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                    'bg-gray-100 text-gray-600'
+                <div className="flex items-center justify-between text-xs">
+                  <span className={`font-medium px-2.5 py-0.5 rounded-full ${
+                    ad.status === 'APPROVED' ? 'bg-teal-50 text-teal-700' :
+                    ad.status === 'GENERATED' ? 'bg-teal-50 text-teal-700' :
+                    ad.status === 'REJECTED' ? 'bg-red-50 text-red-600' :
+                    'bg-stone-100 text-stone-500'
                   }`}>
                     {ad.status === 'DRAFT' ? 'Borrador' :
                      ad.status === 'GENERATED' ? 'Generado' :
                      ad.status === 'APPROVED' ? 'Aprobado' : 'Rechazado'}
                   </span>
-                  <span>{ad.media.length} archivo{ad.media.length !== 1 ? 's' : ''}</span>
+                  <span className="font-mono text-stone-400">{ad.media.length} archivo{ad.media.length !== 1 ? 's' : ''}</span>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        // Estado vacío (sin anuncios)
-        <div className="text-center py-12">
-          <FileText className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-2 text-gray-500">No hay anuncios todavía</p>
-          <Button className="mt-4" onClick={() => navigate('/ads/new')}>
+        <div className="text-center py-16">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 mb-4">
+            <FileText className="h-7 w-7 text-stone-400" />
+          </div>
+          <p className="text-stone-500 mb-2">No hay anuncios todavía</p>
+          <p className="text-sm text-stone-400 mb-5">Crea tu primer anuncio con la ayuda de la inteligencia artificial.</p>
+          <Button onClick={() => navigate('/ads/new')}>
             Crear primer anuncio
           </Button>
         </div>

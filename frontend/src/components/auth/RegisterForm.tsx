@@ -1,16 +1,10 @@
-// ============================================================
-// components/auth/RegisterForm.tsx — Formulario de registro
-// ============================================================
-// Misma estructura que LoginForm pero con campo "nombre"
-// y validación de 6+ caracteres para la contraseña.
-
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRegister } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
 import { Input } from '../ui/Input'
-import { Card, CardContent, CardHeader } from '../ui/Card'
+import { Card, CardContent } from '../ui/Card'
 
 const registerSchema = z.object({
   name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
@@ -36,11 +30,8 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <h2 className="text-xl font-semibold text-center">Crear Cuenta</h2>
-      </CardHeader>
-      <CardContent>
+    <Card>
+      <CardContent className="p-6">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
             id="name"

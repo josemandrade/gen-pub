@@ -1,9 +1,3 @@
-// ============================================================
-// pages/Campaigns.tsx — Gestión de campañas publicitarias
-// ============================================================
-// Muestra lista de campañas y formulario para crear nuevas.
-// Estado local showForm controla si el formulario está visible.
-
 import { useState } from 'react'
 import { useCampaigns, useCreateCampaign } from '../hooks/useCampaigns'
 import { Card, CardContent, CardHeader } from '../components/ui/Card'
@@ -26,7 +20,7 @@ export default function Campaigns() {
         onSuccess: () => {
           setName('')
           setDescription('')
-          setShowForm(false)    // oculta el formulario tras crear
+          setShowForm(false)
         },
       },
     )
@@ -34,22 +28,20 @@ export default function Campaigns() {
 
   return (
     <div className="space-y-6">
-      {/* Encabezado */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Campañas</h1>
-          <p className="text-gray-500">Gestiona tus campañas publicitarias</p>
+          <p className="text-sm font-medium text-stone-400 tracking-wider uppercase">Gestión</p>
+          <h1 className="font-display text-3xl font-bold text-stone-900 mt-1">Campañas</h1>
         </div>
         <Button onClick={() => setShowForm(!showForm)}>
-          <Plus className="h-4 w-4 mr-1" /> Nueva Campaña
+          <Plus className="h-4 w-4 mr-1.5" /> Nueva Campaña
         </Button>
       </div>
 
-      {/* Formulario de nueva campaña (toggle) */}
       {showForm && (
         <Card>
           <CardHeader>
-            <h2 className="font-semibold">Nueva Campaña</h2>
+            <h2 className="font-display font-semibold text-stone-900">Nueva Campaña</h2>
           </CardHeader>
           <CardContent className="space-y-4">
             <Input
@@ -60,7 +52,7 @@ export default function Campaigns() {
               placeholder="Nombre de la campaña"
             />
             <div className="space-y-1">
-              <label htmlFor="campaign-desc" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="campaign-desc" className="block text-sm font-medium text-stone-700">
                 Descripción
               </label>
               <textarea
@@ -68,7 +60,7 @@ export default function Campaigns() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="block w-full rounded-lg border border-stone-300 px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:border-teal-500 focus:ring-teal-500/30"
                 placeholder="Descripción (opcional)"
               />
             </div>
@@ -80,42 +72,45 @@ export default function Campaigns() {
       )}
 
       {isLoading ? (
-        <p className="text-gray-500">Cargando...</p>
+        <div className="flex justify-center py-12">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+        </div>
       ) : campaigns && campaigns.length > 0 ? (
-        // Grid de campañas
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {campaigns.map((c) => (
             <Card key={c.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <h3 className="font-semibold text-gray-900">{c.name}</h3>
+                <h3 className="font-display font-semibold text-stone-900">{c.name}</h3>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
                 {c.description && (
-                  <p className="text-sm text-gray-500 line-clamp-2">{c.description}</p>
+                  <p className="text-sm text-stone-500 line-clamp-2 leading-relaxed">{c.description}</p>
                 )}
-                <div className="flex items-center justify-between text-xs text-gray-400">
-                  <span className={`px-2 py-0.5 rounded-full ${
-                    c.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
-                    c.status === 'PAUSED' ? 'bg-yellow-100 text-yellow-700' :
-                    c.status === 'COMPLETED' ? 'bg-blue-100 text-blue-700' :
-                    'bg-gray-100 text-gray-600'
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${
+                    c.status === 'ACTIVE' ? 'bg-teal-50 text-teal-700' :
+                    c.status === 'PAUSED' ? 'bg-amber-50 text-amber-700' :
+                    c.status === 'COMPLETED' ? 'bg-stone-100 text-stone-600' :
+                    'bg-stone-100 text-stone-500'
                   }`}>
                     {c.status === 'DRAFT' ? 'Borrador' :
                      c.status === 'ACTIVE' ? 'Activa' :
                      c.status === 'PAUSED' ? 'Pausada' : 'Completada'}
                   </span>
-                  <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                  <span className="font-mono text-xs text-stone-400">{new Date(c.createdAt).toLocaleDateString()}</span>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       ) : (
-        // Estado vacío
-        <div className="text-center py-12">
-          <FolderOpen className="mx-auto h-12 w-12 text-gray-300" />
-          <p className="mt-2 text-gray-500">No hay campañas aún</p>
-          <Button variant="outline" className="mt-4" onClick={() => setShowForm(true)}>
+        <div className="text-center py-16">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 mb-4">
+            <FolderOpen className="h-7 w-7 text-stone-400" />
+          </div>
+          <p className="text-stone-500 mb-2">No hay campañas aún</p>
+          <p className="text-sm text-stone-400 mb-5">Crea tu primera campaña para empezar a organizar tus anuncios.</p>
+          <Button variant="outline" onClick={() => setShowForm(true)}>
             Crear primera campaña
           </Button>
         </div>

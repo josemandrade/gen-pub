@@ -1,22 +1,21 @@
-// ============================================================
-// components/layout/AppLayout.tsx — Layout principal (sidebar)
-// ============================================================
-// <Outlet /> es de React Router: renderiza el contenido de
-// la ruta hija dentro de este layout.
-//
-// El sidebar se muestra en desktop (lg:static) y en mobile
-// se oculta/despliega con un botón menú.
-
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
-import { Button } from '../ui/Button'
-import { FileText, LogOut, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Megaphone, FileText, Plus, LogOut, Menu, X } from 'lucide-react'
 import { useState } from 'react'
+import { cn } from '../../utils/cn'
+
+const navItems = [
+  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/campaigns', label: 'Campañas', icon: Megaphone },
+  { to: '/ads', label: 'Mis Anuncios', icon: FileText },
+  { to: '/ads/new', label: 'Nuevo Anuncio', icon: Plus },
+]
 
 export function AppLayout() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(false)  // estado del menú mobile
+  const location = useLocation()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -24,90 +23,82 @@ export function AppLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* ===== HEADER MOBILE (visible solo en pantallas chicas) ===== */}
-      <header className="lg:hidden flex items-center justify-between border-b bg-white px-4 py-3">
-        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+    <div className="min-h-screen bg-stone-50">
+      <header className="lg:hidden flex items-center justify-between border-b border-stone-200 bg-white px-4 py-3">
+        <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 -ml-1 rounded-lg hover:bg-stone-100 transition-colors">
+          {sidebarOpen ? <X className="h-5 w-5 text-stone-600" /> : <Menu className="h-5 w-5 text-stone-600" />}
         </button>
-        <h1 className="text-lg font-semibold">Generador de Publicidad</h1>
-        <div className="w-6" /> {/* spacer para centrar el título */}
+        <span className="font-display text-base font-bold text-stone-900">Generador</span>
+        <div className="w-5" />
       </header>
 
       <div className="flex">
-        {/* ===== SIDEBAR ===== */}
-        {/* En mobile: fixed + transform para animar entrada/salida */}
-        {/* En desktop (lg): static, siempre visible */}
         <aside
-          className={`${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          } fixed inset-y-0 left-0 z-40 w-64 transform border-r bg-white transition-transform lg:static lg:translate-x-0`}
+          className={cn(
+            'fixed inset-y-0 left-0 z-40 w-64 transform border-r border-stone-200 bg-white transition-transform lg:static lg:translate-x-0',
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+          )}
         >
           <div className="flex h-full flex-col">
-            {/* Logo (solo desktop) */}
-            <div className="hidden lg:flex items-center gap-2 border-b px-6 py-4">
-              <FileText className="h-6 w-6 text-blue-600" />
-              <span className="text-lg font-semibold">Gen. Publicidad</span>
+            <div className="hidden lg:flex items-center gap-3 border-b border-stone-100 px-6 py-5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-600">
+                <span className="font-display text-sm font-bold text-white">G</span>
+              </div>
+              <div>
+                <span className="block font-display text-base font-bold leading-tight text-stone-900">Generador</span>
+                <span className="block text-[11px] font-medium tracking-wide text-stone-400 uppercase">de Publicidad</span>
+              </div>
             </div>
 
-            {/* Navegación */}
             <nav className="flex-1 space-y-1 px-3 py-4">
-              <Link
-                to="/"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                onClick={() => setSidebarOpen(false)}
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/campaigns"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                onClick={() => setSidebarOpen(false)}
-              >
-                Campañas
-              </Link>
-              <Link
-                to="/ads"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                onClick={() => setSidebarOpen(false)}
-              >
-                Mis Anuncios
-              </Link>
-              <Link
-                to="/ads/new"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
-                onClick={() => setSidebarOpen(false)}
-              >
-                Nuevo Anuncio
-              </Link>
+              <p className="px-3 pb-2 text-[11px] font-semibold tracking-widest text-stone-400 uppercase">Menú</p>
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.to
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-teal-50 text-teal-700'
+                        : 'text-stone-500 hover:bg-stone-100 hover:text-stone-800',
+                    )}
+                  >
+                    <item.icon className={cn('h-4 w-4', isActive ? 'text-teal-600' : 'text-stone-400')} />
+                    {item.label}
+                  </Link>
+                )
+              })}
             </nav>
 
-            {/* Footer del sidebar: datos del usuario + botón salir */}
-            <div className="border-t px-4 py-4">
+            <div className="border-t border-stone-100 px-4 py-4">
               <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <p className="font-medium text-gray-900">{user?.name}</p>
-                  <p className="text-gray-500">{user?.email}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-stone-800">{user?.name}</p>
+                  <p className="truncate text-xs text-stone-400">{user?.email}</p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <button
+                  onClick={handleLogout}
+                  className="ml-2 flex h-8 w-8 items-center justify-center rounded-lg text-stone-400 hover:bg-stone-100 hover:text-stone-600 transition-colors"
+                  title="Cerrar sesión"
+                >
                   <LogOut className="h-4 w-4" />
-                </Button>
+                </button>
               </div>
             </div>
           </div>
         </aside>
 
-        {/* ===== OVERLAY MOBILE (fondo oscuro al abrir menú) ===== */}
         {sidebarOpen && (
           <div
-            className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+            className="fixed inset-0 z-30 bg-black/15 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* ===== CONTENIDO PRINCIPAL ===== */}
-        {/* <Outlet /> renderiza la página activa según la ruta */}
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-6 lg:p-8 max-w-6xl">
           <Outlet />
         </main>
       </div>
