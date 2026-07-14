@@ -20,7 +20,7 @@ jobs:
         ports:
           - 5433:5432
         options: >-
-          --health-cmd pg_isready -U postgres
+          --health-cmd "pg_isready -U postgres"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 5
@@ -42,7 +42,7 @@ jobs:
       - name: Test
         run: ./mvnw test -B
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/generador_publicidad_test
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5433/generador_publicidad_test
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgres
           JWT_SECRET: ci-secret-key-for-testing-only-1234567890
