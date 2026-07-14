@@ -3,8 +3,6 @@ backend/target/
 backend/*.class
 backend/*.jar
 backend/*.war
-backend/.mvn/wrapper/maven-wrapper.jar
-!backend/.mvn/wrapper/maven-wrapper.properties
 backend/.mvn/wrapper/MavenWrapperDownloader.java
 backend/.mvn/timing.properties
 backend/.mvn/.gradle/
