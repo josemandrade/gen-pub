@@ -65,6 +65,7 @@ export default defineConfig({
           : undefined,
         SPRING_DATASOURCE_USERNAME: process.env.CI ? 'postgres' : undefined,
         SPRING_DATASOURCE_PASSWORD: process.env.CI ? 'postgres' : undefined,
+        SPRING_DATASOURCE_DRIVER_CLASS_NAME: process.env.CI ? 'org.postgresql.Driver' : undefined,
         JWT_SECRET: process.env.CI ? 'ci-e2e-secret-key-for-testing-only' : undefined,
       },
     },
