@@ -7,11 +7,11 @@ describe('cn', () => {
   })
 
   it('filtra valores falsy', () => {
-    expect(cn('px-4', false && 'hidden', undefined, null, 'py-2')).toBe('px-4 py-2')
+    expect(cn('px-4', '' as string, undefined, null, 'py-2')).toBe('px-4 py-2')
   })
 
-  it('filtra valores falsy condicionales', () => {
-    expect(cn('base', true && 'visible', false && 'hidden')).toBe('base visible')
+  it('incluye clases condicionales cuando son true', () => {
+    expect(cn('base', 'visible', '')).toBe('base visible')
   })
 
   it('resuelve conflictos de Tailwind (última clase gana)', () => {
@@ -26,11 +26,19 @@ describe('cn', () => {
     expect(cn('')).toBe('')
   })
 
-  it('acepta solo clases condicionales', () => {
-    expect(cn(false && 'hidden', true && 'block')).toBe('block')
+  it('filtra clases condicionales falsy pasando null', () => {
+    const show = false
+    expect(cn('block', show && 'hidden')).toBe('block')
+  })
+
+  it('incluye clases condicionales truthy', () => {
+    const show = true
+    expect(cn('base', show && 'visible')).toBe('base visible')
   })
 
   it('funciona con objetos clsx', () => {
-    expect(cn({ 'text-red-500': true, 'bg-blue-500': false })).toBe('text-red-500')
+    const isActive = true
+    const isDisabled = false
+    expect(cn({ 'text-red-500': isActive, 'bg-blue-500': isDisabled })).toBe('text-red-500')
   })
 })

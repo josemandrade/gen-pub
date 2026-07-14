@@ -1,0 +1,20 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    show-sql: false
+  flyway:
+    enabled: false
+  datasource:
+    url: jdbc:h2:mem:e2e;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+app:
+  jwt:
+    secret: e2e-secret-key-that-is-at-least-256-bits-long-for-testing
+    expiration-ms: 86400000
+  storage:
+    upload-dir: build/e2e-uploads

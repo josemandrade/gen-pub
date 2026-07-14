@@ -54,5 +54,10 @@ Thumbs.db
 *.swo
 *~
 
+### E2E ###
+frontend/e2e-report/
+frontend/test-results/
+frontend/e2e/.auth.json
+
 ### Logs ###
 *.log
