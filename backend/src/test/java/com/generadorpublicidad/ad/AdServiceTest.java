@@ -88,7 +88,6 @@ class AdServiceTest {
             field.set(ad, 10L);
             return ad;
         });
-        when(mediaRepository.findByAdIdOrderByCreatedAtAsc(10L)).thenReturn(List.of());
 
         var response = adService.create(request);
 
