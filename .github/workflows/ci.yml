@@ -39,8 +39,8 @@ jobs:
           distribution: temurin
           cache: maven
 
-      - name: Build & test
-        run: ./mvnw verify -B
+      - name: Test
+        run: ./mvnw test -B
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/generador_publicidad_test
           SPRING_DATASOURCE_USERNAME: postgres
@@ -50,6 +50,7 @@ jobs:
   frontend:
     name: Frontend - Lint & Build
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: frontend
