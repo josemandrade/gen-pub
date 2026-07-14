@@ -20,6 +20,20 @@ export default function AdEdit() {
   const [description, setDescription] = useState('')
   const [initialized, setInitialized] = useState(false)
 
+  const handleUpload = (files: File[]) => {
+    if (!ad) return
+    uploadMedia.mutate({ adId: ad.id, files })
+  }
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: handleUpload,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+      'video/*': ['.mp4', '.webm', '.mov'],
+    },
+    multiple: true,
+  })
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -43,24 +57,11 @@ export default function AdEdit() {
     )
   }
 
-  const handleUpload = (files: File[]) => {
-    uploadMedia.mutate({ adId: ad.id, files })
-  }
-
   const handleDeleteMedia = (mediaId: number) => {
     if (window.confirm('¿Eliminar este archivo?')) {
       deleteMedia.mutate(mediaId)
     }
   }
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: handleUpload,
-    accept: {
-      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
-      'video/*': ['.mp4', '.webm', '.mov'],
-    },
-    multiple: true,
-  })
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
