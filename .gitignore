@@ -54,6 +54,10 @@ Thumbs.db
 *.swo
 *~
 
+### Frontend tests ###
+frontend/coverage/
+frontend/.vitest/
+
 ### E2E ###
 frontend/e2e-report/
 frontend/test-results/

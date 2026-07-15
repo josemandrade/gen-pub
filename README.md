@@ -60,11 +60,14 @@ hooks, store y utilidades:
 
 ```bash
 cd frontend
-npm install            # requiere vitest + testing-library como devDeps
-npm test               # una ejecución
-npm run test:watch     # modo watch (desarrollo)
-npm run test:coverage  # con reporte de cobertura
+npm install                        # requiere vitest + testing-library como devDeps
+npm test                           # una ejecución
+npm run test:watch                 # modo watch (desarrollo)
+npm run test:coverage              # con reporte de cobertura
 ```
+
+> Para cobertura se necesita `@vitest/coverage-v8` como devDependency.
+> Instalalo con: `npm install --save-dev @vitest/coverage-v8`
 
 Incluye tests de:
 - **Utils**: `cn()` (filtrado de clases, resolución de conflictos Tailwind)
@@ -128,7 +131,15 @@ En GitHub Actions se ejecutan 3 jobs en paralelo:
 | Frontend | `npm run lint && npx tsc && npm test && npm run build` | Node 22 |
 | E2E | `npm run e2e` | PostgreSQL + JDK 17 + Node 22 |
 
-Los tests E2E en CI usan PostgreSQL (container Docker) en vez de H2.
+Los tests E2E en CI usan PostgreSQL (container Docker) en vez de H2,
+configurando automáticamente `SPRING_DATASOURCE_URL` y el driver JDBC
+(`org.postgresql.Driver`) vía `CI: true` en el webServer de Playwright.
+
+> Para simular CI localmente usá [act](https://github.com/nektos/act):
+> ```bash
+> act -j frontend                     # solo frontend
+> act -j e2e --secret-file .secrets   # E2E completo con PostgreSQL
+> ```
 
 ### Full stack con Docker
 
