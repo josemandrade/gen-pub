@@ -1,12 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
+import type { InternalAxiosRequestConfig } from 'axios'
 import { TOKEN_KEY } from '../utils/constants'
 
 const TOKEN = 'jwt-token-123'
 
+interface ClientLike {
+  interceptors: {
+    request: { handlers: unknown[] | undefined }
+    response: { handlers: unknown[] | undefined }
+  }
+}
+
+function getReqHandler(client: ClientLike) {
+  return (client.interceptors.request.handlers![0] as { fulfilled: (c: InternalAxiosRequestConfig) => InternalAxiosRequestConfig }).fulfilled
+}
+
+function getResHandler(client: ClientLike) {
+  return {
+    fulfilled: (client.interceptors.response.handlers![0] as { fulfilled: (r: unknown) => unknown }).fulfilled,
+    rejected: (client.interceptors.response.handlers![0] as { rejected: (e: Error) => never }).rejected,
+  }
+}
+
 beforeEach(() => {
   localStorage.clear()
-  delete (window as any).location
-  window.location = { href: '' } as any
+  delete (window as unknown as Record<string, unknown>).location
+  window.location = { href: '' } as Location
 })
 
 describe('client interceptors', () => {
@@ -14,7 +33,7 @@ describe('client interceptors', () => {
     localStorage.setItem(TOKEN_KEY, TOKEN)
     const { default: client } = await import('./client')
 
-    const config = client.interceptors.request.handlers[0].fulfilled({ headers: {} } as any)
+    const config = getReqHandler(client as unknown as ClientLike)({ headers: {} } as unknown as InternalAxiosRequestConfig)
 
     expect(config.headers.Authorization).toBe(`Bearer ${TOKEN}`)
   })
@@ -22,7 +41,7 @@ describe('client interceptors', () => {
   it('no agrega Authorization header cuando no hay token', async () => {
     const { default: client } = await import('./client')
 
-    const config = client.interceptors.request.handlers[0].fulfilled({ headers: {} } as any)
+    const config = getReqHandler(client as unknown as ClientLike)({ headers: {} } as unknown as InternalAxiosRequestConfig)
 
     expect(config.headers.Authorization).toBeUndefined()
   })
@@ -31,9 +50,9 @@ describe('client interceptors', () => {
     localStorage.setItem(TOKEN_KEY, TOKEN)
     const { default: client } = await import('./client')
 
-    const config = client.interceptors.request.handlers[0].fulfilled({
+    const config = getReqHandler(client as unknown as ClientLike)({
       headers: { 'Content-Type': 'application/json' },
-    } as any)
+    } as unknown as InternalAxiosRequestConfig)
 
     expect(config.headers['Content-Type']).toBe('application/json')
     expect(config.headers.Authorization).toBe(`Bearer ${TOKEN}`)
@@ -43,7 +62,7 @@ describe('client interceptors', () => {
     const { default: client } = await import('./client')
     const response = { data: 'ok', status: 200 }
 
-    const result = client.interceptors.response.handlers[0].fulfilled(response as any)
+    const result = getResHandler(client as unknown as ClientLike).fulfilled(response)
 
     expect(result).toBe(response)
   })
@@ -54,7 +73,7 @@ describe('client interceptors', () => {
 
     const error = { response: { status: 401 } }
     await expect(
-      client.interceptors.response.handlers[0].rejected(error as any),
+      Promise.resolve(getResHandler(client as unknown as ClientLike).rejected(error as unknown as Error)),
     ).rejects.toBe(error)
 
     expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
@@ -68,7 +87,7 @@ describe('client interceptors', () => {
     for (const status of [400, 403, 404, 500]) {
       const error = { response: { status } }
       await expect(
-        client.interceptors.response.handlers[0].rejected(error as any),
+        Promise.resolve(getResHandler(client as unknown as ClientLike).rejected(error as unknown as Error)),
       ).rejects.toBe(error)
     }
 
@@ -81,7 +100,7 @@ describe('client interceptors', () => {
     const error = { response: { status: 401 } }
 
     await expect(
-      client.interceptors.response.handlers[0].rejected(error as any),
+      Promise.resolve(getResHandler(client as unknown as ClientLike).rejected(error as unknown as Error)),
     ).rejects.toBeDefined()
   })
 })

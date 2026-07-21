@@ -14,7 +14,7 @@ const mock = vi.hoisted(() => ({
 
 vi.mock('react-router-dom', () => ({
   Outlet: () => null,
-  Link: ({ children, to, className }: any) => React.createElement('a', { href: to, className }, children),
+  Link: ({ children, to, className }: { children: React.ReactNode; to: string; className?: string }) => React.createElement('a', { href: to, className }, children),
   useNavigate: () => mock.navigate,
   useLocation: () => ({ pathname: '/' }),
 }))

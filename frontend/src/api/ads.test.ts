@@ -113,9 +113,9 @@ describe('ads API', () => {
     vi.mocked(client.post).mockResolvedValue({ data: mockCopy })
     const { generateCopy } = await import('./ads')
 
-    const result = await generateCopy({ prompt: 'create', keywords: [] })
+    const result = await generateCopy({ prompt: 'create', mediaIds: [] })
 
-    expect(client.post).toHaveBeenCalledWith('/ads/generate-copy', { prompt: 'create', keywords: [] })
+    expect(client.post).toHaveBeenCalledWith('/ads/generate-copy', { prompt: 'create', mediaIds: [] })
     expect(result).toEqual(mockCopy)
   })
 

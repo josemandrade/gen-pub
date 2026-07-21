@@ -8,7 +8,7 @@ import Dashboard from './Dashboard'
 const mockNavigate = vi.fn()
 
 vi.mock('../store/authStore', () => ({
-  useAuthStore: (selector: any) => selector({
+  useAuthStore: (selector: (state: unknown) => unknown) => selector({
     user: { id: 1, name: 'Test User', email: 'test@test.com', role: 'EDITOR' },
     isAuthenticated: true,
   }),

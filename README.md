@@ -61,10 +61,15 @@ hooks, store y utilidades:
 ```bash
 cd frontend
 npm install                        # requiere vitest + testing-library como devDeps
+npm run lint                       # linter (ejecutar antes de los tests)
+npm run typecheck                  # typecheck con TypeScript
 npm test                           # una ejecución
 npm run test:watch                 # modo watch (desarrollo)
 npm run test:coverage              # con reporte de cobertura
 ```
+
+> Si `npm test` falla por un paquete global `test` conflictivo, ejecutá
+> directamente: `npx vitest run`
 
 > Para cobertura se necesita `@vitest/coverage-v8` como devDependency.
 > Instalalo con: `npm install --save-dev @vitest/coverage-v8`

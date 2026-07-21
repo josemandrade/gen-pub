@@ -3,7 +3,12 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 
-const registerHook = vi.hoisted(() => ({
+const registerHook = vi.hoisted((): {
+  mutate: typeof vi.fn;
+  isPending: boolean;
+  isError: boolean;
+  error: Error | null;
+} => ({
   mutate: vi.fn(),
   isPending: false,
   isError: false,

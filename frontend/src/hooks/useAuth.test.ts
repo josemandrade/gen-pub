@@ -11,7 +11,7 @@ vi.mock('react-router-dom', () => ({
 }))
 
 vi.mock('../store/authStore', () => ({
-  useAuthStore: (selector: any) => selector({ setAuth: mockSetAuth }),
+  useAuthStore: (selector: (state: unknown) => unknown) => selector({ setAuth: mockSetAuth }),
 }))
 
 const { mockLogin, mockRegister } = vi.hoisted(() => ({

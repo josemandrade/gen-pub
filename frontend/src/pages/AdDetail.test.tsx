@@ -7,7 +7,7 @@ import AdDetail from './AdDetail'
 
 const mockNavigate = vi.fn()
 
-const adHook = vi.hoisted(() => ({
+const adHook = vi.hoisted((): { data: unknown; isLoading: boolean } => ({
   data: undefined,
   isLoading: false,
 }))

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import type { AuthResponse } from './auth'
+import type { AuthResponse } from '../types'
 
 vi.mock('./client', () => ({
   default: {

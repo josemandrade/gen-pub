@@ -6,7 +6,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Campaigns from './Campaigns'
 
-const campaignsHook = vi.hoisted(() => ({
+const campaignsHook = vi.hoisted((): { data: unknown; isLoading: boolean } => ({
   data: [],
   isLoading: false,
 }))

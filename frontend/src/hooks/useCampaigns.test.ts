@@ -7,8 +7,8 @@ const mockFetchCampaigns = vi.fn()
 const mockCreateCampaign = vi.fn()
 
 vi.mock('../api/campaigns', () => ({
-  fetchCampaigns: (...args: any[]) => mockFetchCampaigns(...args),
-  createCampaign: (...args: any[]) => mockCreateCampaign(...args),
+  fetchCampaigns: (...args: unknown[]) => mockFetchCampaigns(...args),
+  createCampaign: (...args: unknown[]) => mockCreateCampaign(...args),
 }))
 
 function createWrapper() {
