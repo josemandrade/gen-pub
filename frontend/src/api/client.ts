@@ -8,11 +8,10 @@
 //   3. Redirige al login si el backend responde con 401
 
 import axios from 'axios'
-import { TOKEN_KEY } from '../utils/constants'
+import { API_BASE_URL, TOKEN_KEY } from '../utils/constants'
 
-// Crear instancia de Axios con configuración base
 const client = axios.create({
-  baseURL: '/api',                          // todas las rutas empiezan con /api
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
 })
 

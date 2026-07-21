@@ -25,8 +25,10 @@ public class CampaignService {
                 .toList();
     }
 
-    public CampaignResponse findById(Long id) {
+    public CampaignResponse findById(Long id, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
         return campaignRepository.findById(id)
+                .filter(c -> c.getUser().getId().equals(user.getId()))
                 .map(CampaignResponse::of)
                 .orElseThrow(() -> new IllegalArgumentException("Campaña no encontrada: " + id));
     }

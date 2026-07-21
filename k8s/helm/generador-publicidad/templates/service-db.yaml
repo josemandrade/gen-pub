@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "generador-publicidad.fullname" . }}-db
+  namespace: {{ include "generador-publicidad.namespace" . }}
+  labels:
+    {{- include "generador-publicidad.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.postgresql.port }}
+      targetPort: postgres
+      name: postgres
+  selector:
+    {{- include "generador-publicidad.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database

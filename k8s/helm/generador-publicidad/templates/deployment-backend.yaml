@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "generador-publicidad.fullname" . }}-backend
+  namespace: {{ include "generador-publicidad.namespace" . }}
+  labels:
+    {{- include "generador-publicidad.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicas }}
+  selector:
+    matchLabels:
+      {{- include "generador-publicidad.labels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "generador-publicidad.labels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h {{ include "generador-publicidad.fullname" . }}-db -U {{ .Values.secrets.db.username }}; do
+                echo "Waiting for PostgreSQL..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready!"
+          envFrom:
+            - secretRef:
+                name: {{ include "generador-publicidad.fullname" . }}-db
+      containers:
+        - name: backend
+          image: "{{ .Values.images.backend.repository }}:{{ .Values.images.backend.tag }}"
+          imagePullPolicy: {{ .Values.images.backend.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.backend.port }}
+              name: http
+          envFrom:
+            - configMapRef:
+                name: {{ include "generador-publicidad.fullname" . }}-backend
+            - secretRef:
+                name: {{ include "generador-publicidad.fullname" . }}-db
+            - secretRef:
+                name: {{ include "generador-publicidad.fullname" . }}-app
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://{{ include "generador-publicidad.fullname" . }}-db:{{ .Values.postgresql.port }}/$(POSTGRES_DB)
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "generador-publicidad.fullname" . }}-db
+                  key: POSTGRES_USER
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "generador-publicidad.fullname" . }}-db
+                  key: POSTGRES_PASSWORD
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          volumeMounts:
+            - name: uploads
+              mountPath: /data/uploads
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.livenessPath }}
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.probes.readinessPath }}
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ include "generador-publicidad.fullname" . }}-uploads

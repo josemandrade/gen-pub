@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,45 +21,45 @@ public class AdController {
     private final AdService adService;
 
     @GetMapping
-    public ResponseEntity<List<AdResponse>> list(@RequestParam Long campaignId) {
-        return ResponseEntity.ok(adService.findByCampaignId(campaignId));
+    public ResponseEntity<List<AdResponse>> list(@RequestParam Long campaignId, Authentication auth) {
+        return ResponseEntity.ok(adService.findByCampaignId(campaignId, auth));
     }
 
     @GetMapping("/my")
-    public ResponseEntity<List<AdResponse>> listMy(org.springframework.security.core.Authentication auth) {
+    public ResponseEntity<List<AdResponse>> listMy(Authentication auth) {
         var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
         return ResponseEntity.ok(adService.findByUserId(user.getId()));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AdResponse> get(@PathVariable Long id) {
-        return ResponseEntity.ok(adService.findById(id));
+    public ResponseEntity<AdResponse> get(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(adService.findById(id, auth));
     }
 
     @PostMapping
-    public ResponseEntity<AdResponse> create(@Valid @RequestBody CreateAdRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(adService.create(request));
+    public ResponseEntity<AdResponse> create(@Valid @RequestBody CreateAdRequest request, Authentication auth) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(adService.create(request, auth));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AdResponse> update(@PathVariable Long id, @Valid @RequestBody UpdateAdRequest request) {
-        return ResponseEntity.ok(adService.update(id, request));
+    public ResponseEntity<AdResponse> update(@PathVariable Long id, @Valid @RequestBody UpdateAdRequest request, Authentication auth) {
+        return ResponseEntity.ok(adService.update(id, request, auth));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        adService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication auth) {
+        adService.delete(id, auth);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{id}/media")
-    public ResponseEntity<AdResponse> uploadMedia(@PathVariable Long id, @RequestParam List<MultipartFile> files) {
-        return ResponseEntity.ok(adService.uploadMedia(id, files));
+    public ResponseEntity<AdResponse> uploadMedia(@PathVariable Long id, @RequestParam List<MultipartFile> files, Authentication auth) {
+        return ResponseEntity.ok(adService.uploadMedia(id, files, auth));
     }
 
     @DeleteMapping("/media/{mediaId}")
-    public ResponseEntity<Void> deleteMedia(@PathVariable Long mediaId) {
-        adService.deleteMedia(mediaId);
+    public ResponseEntity<Void> deleteMedia(@PathVariable Long mediaId, Authentication auth) {
+        adService.deleteMedia(mediaId, auth);
         return ResponseEntity.noContent().build();
     }
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { API_BASE_URL, TOKEN_KEY } from './constants'
 
 describe('constants', () => {
-  it('API_BASE_URL debe ser /api', () => {
+  it('API_BASE_URL debe tener valor por defecto /api', () => {
     expect(API_BASE_URL).toBe('/api')
   })
 

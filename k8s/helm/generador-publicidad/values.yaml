@@ -1,0 +1,83 @@
+namespace: generador-publicidad
+
+domain: nip.io
+clusterIP: 192.168.49.2
+
+images:
+  backend:
+    repository: generador-publicidad-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  frontend:
+    repository: generador-publicidad-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+
+backend:
+  replicas: 2
+  port: 8080
+  resources:
+    requests:
+      memory: 512Mi
+      cpu: 250m
+    limits:
+      memory: 1Gi
+      cpu: 500m
+  hpa:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 70
+  probes:
+    livenessPath: /api-docs
+    readinessPath: /api-docs
+
+frontend:
+  replicas: 2
+  port: 80
+  resources:
+    requests:
+      memory: 64Mi
+      cpu: 50m
+    limits:
+      memory: 128Mi
+      cpu: 100m
+
+postgresql:
+  image:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+  port: 5432
+  storage: 1Gi
+  storageClassName: standard
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 100m
+    limits:
+      memory: 512Mi
+      cpu: 200m
+
+ingress:
+  enabled: true
+  className: nginx
+  tls:
+    enabled: false
+    clusterIssuer: letsencrypt-prod
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 100m
+
+uploads:
+  storage: 1Gi
+  storageClassName: standard
+
+secrets:
+  db:
+    database: generador_publicidad
+    username: postgres
+    password: changeme
+  jwt:
+    secret: devSecretKeyThatMustBeChangedInProd!!!
+  openai:
+    apiKey: ""

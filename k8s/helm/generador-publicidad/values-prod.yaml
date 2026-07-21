@@ -1,0 +1,31 @@
+backend:
+  replicas: 3
+  hpa:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+frontend:
+  replicas: 2
+
+postgresql:
+  storage: 10Gi
+
+ingress:
+  tls:
+    enabled: true
+    clusterIssuer: letsencrypt-prod
+
+uploads:
+  storage: 10Gi
+
+secrets:
+  db:
+    database: generador_publicidad
+    username: postgres
+    password: ""
+  jwt:
+    secret: ""
+  openai:
+    apiKey: ""

@@ -26,6 +26,8 @@ export function AdGeneratorForm({ onGenerate, onApply }: AdGeneratorFormProps) {
     try {
       const copy = await onGenerate(prompt)
       setResult(copy)
+    } catch {
+      setResult(null)
     } finally {
       setIsGenerating(false)
     }

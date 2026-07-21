@@ -3,6 +3,7 @@ package com.generadorpublicidad.common;
 import com.generadorpublicidad.common.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindingResult;
@@ -17,10 +18,13 @@ import static org.mockito.Mockito.*;
 class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler;
+    private Environment env;
 
     @BeforeEach
     void setUp() {
         handler = new GlobalExceptionHandler();
+        env = mock(Environment.class);
+        when(env.getActiveProfiles()).thenReturn(new String[]{"dev"});
     }
 
     @Test
@@ -46,6 +50,30 @@ class GlobalExceptionHandlerTest {
         assertNotNull(body);
         assertEquals(401, body.status());
         assertEquals("Unauthorized", body.error());
+    }
+
+    @Test
+    void handleGeneral_returns500() {
+        var ex = new RuntimeException("error inesperado");
+        var response = handler.handleGeneral(ex, env);
+
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        var body = response.getBody();
+        assertNotNull(body);
+        assertEquals(500, body.status());
+        assertEquals("Internal Server Error", body.error());
+        assertEquals("error inesperado", body.message());
+    }
+
+    @Test
+    void handleGeneral_hidesMessageInProd() {
+        when(env.getActiveProfiles()).thenReturn(new String[]{"prod"});
+        var ex = new RuntimeException("error inesperado");
+        var response = handler.handleGeneral(ex, env);
+
+        var body = response.getBody();
+        assertNotNull(body);
+        assertEquals("Ha ocurrido un error interno", body.message());
     }
 
     @Test

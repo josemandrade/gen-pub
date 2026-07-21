@@ -27,3 +27,28 @@ test-backend:
 
 test-all:
 	cd backend && ./mvnw verify -B
+
+# Kubernetes / Helm
+k8s-dev:
+	$(MAKE) -C k8s dev
+
+k8s-prod:
+	$(MAKE) -C k8s prod
+
+k8s-build:
+	$(MAKE) -C k8s build-images
+
+k8s-load:
+	$(MAKE) -C k8s load-images
+
+k8s-delete:
+	$(MAKE) -C k8s delete
+
+k8s-logs:
+	$(MAKE) -C k8s logs
+
+k8s-status:
+	$(MAKE) -C k8s status
+
+k8s-deploy:
+	./k8s/deploy-k8s.sh ${ARGS}

@@ -13,12 +13,14 @@ import com.generadorpublicidad.media.dto.MediaResponse;
 import com.generadorpublicidad.media.repository.MediaRepository;
 import com.generadorpublicidad.storage.StorageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -38,31 +40,53 @@ public class AdService {
     private final AIClient aiClient;
 
     @Transactional(readOnly = true)
-    public List<AdResponse> findByCampaignId(Long campaignId) {
-        return adRepository.findByCampaignIdOrderByCreatedAtDesc(campaignId)
+    public List<AdResponse> findByCampaignId(Long campaignId, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
+        var campaign = campaignRepository.findById(campaignId)
+                .filter(c -> c.getUser().getId().equals(user.getId()))
+                .orElseThrow(() -> new IllegalArgumentException("Campaña no encontrada: " + campaignId));
+        var ads = adRepository.findByCampaignIdOrderByCreatedAtDesc(campaign.getId());
+        var adIds = ads.stream().map(Ad::getId).toList();
+        var mediaByAd = mediaRepository.findByAdIdsOrderByCreatedAtAsc(adIds)
                 .stream()
-                .map(ad -> AdResponse.of(ad, getMedia(ad.getId())))
+                .collect(Collectors.groupingBy(
+                        m -> m.getAd().getId(),
+                        Collectors.mapping(MediaResponse::of, Collectors.toList())));
+        return ads.stream()
+                .map(ad -> AdResponse.of(ad, mediaByAd.getOrDefault(ad.getId(), List.of())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<AdResponse> findByUserId(Long userId) {
-        return adRepository.findByUserId(userId)
+        var ads = adRepository.findByUserId(userId);
+        var adIds = ads.stream().map(Ad::getId).toList();
+        var mediaByAd = mediaRepository.findByAdIdsOrderByCreatedAtAsc(adIds)
                 .stream()
-                .map(ad -> AdResponse.of(ad, getMedia(ad.getId())))
+                .collect(Collectors.groupingBy(
+                        m -> m.getAd().getId(),
+                        Collectors.mapping(MediaResponse::of, Collectors.toList())));
+        return ads.stream()
+                .map(ad -> AdResponse.of(ad, mediaByAd.getOrDefault(ad.getId(), List.of())))
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public AdResponse findById(Long id) {
+    public AdResponse findById(Long id, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
         var ad = adRepository.findByIdWithCampaign(id)
                 .orElseThrow(() -> new IllegalArgumentException("Anuncio no encontrado: " + id));
+        if (!ad.getCampaign().getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Anuncio no encontrado: " + id);
+        }
         return AdResponse.of(ad, getMedia(id));
     }
 
     @Transactional
-    public AdResponse create(CreateAdRequest request) {
+    public AdResponse create(CreateAdRequest request, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
         var campaign = campaignRepository.findById(request.campaignId())
+                .filter(c -> c.getUser().getId().equals(user.getId()))
                 .orElseThrow(() -> new IllegalArgumentException("Campaña no encontrada: " + request.campaignId()));
 
         var ad = Ad.builder()
@@ -77,22 +101,38 @@ public class AdService {
     }
 
     @Transactional
-    public AdResponse update(Long id, UpdateAdRequest request) {
-        var ad = adRepository.findById(id)
+    public AdResponse update(Long id, UpdateAdRequest request, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
+        var ad = adRepository.findByIdWithCampaign(id)
                 .orElseThrow(() -> new IllegalArgumentException("Anuncio no encontrado: " + id));
+        if (!ad.getCampaign().getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Anuncio no encontrado: " + id);
+        }
 
         if (request.title() != null) ad.setTitle(request.title());
         if (request.description() != null) ad.setDescription(request.description());
-        if (request.status() != null) ad.setStatus(Ad.Status.valueOf(request.status()));
+        if (request.status() != null) {
+            try {
+                ad.setStatus(Ad.Status.valueOf(request.status()));
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(
+                    "Estado inválido: " + request.status() +
+                    ". Valores permitidos: " + java.util.Arrays.toString(Ad.Status.values()));
+            }
+        }
 
         ad = adRepository.save(ad);
         return AdResponse.of(ad, getMedia(id));
     }
 
     @Transactional
-    public AdResponse uploadMedia(Long adId, List<MultipartFile> files) {
-        var ad = adRepository.findById(adId)
+    public AdResponse uploadMedia(Long adId, List<MultipartFile> files, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
+        var ad = adRepository.findByIdWithCampaign(adId)
                 .orElseThrow(() -> new IllegalArgumentException("Anuncio no encontrado: " + adId));
+        if (!ad.getCampaign().getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Anuncio no encontrado: " + adId);
+        }
 
         for (var file : files) {
             validateFile(file);
@@ -118,9 +158,15 @@ public class AdService {
     }
 
     @Transactional
-    public void deleteMedia(Long mediaId) {
+    public void deleteMedia(Long mediaId, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
         var media = mediaRepository.findById(mediaId)
                 .orElseThrow(() -> new IllegalArgumentException("Media no encontrado: " + mediaId));
+        var ad = adRepository.findByIdWithCampaign(media.getAd().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Anuncio no encontrado"));
+        if (!ad.getCampaign().getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Media no encontrado: " + mediaId);
+        }
         storageService.delete(media.getUrl());
         mediaRepository.delete(media);
     }
@@ -130,7 +176,13 @@ public class AdService {
     }
 
     @Transactional
-    public void delete(Long id) {
+    public void delete(Long id, Authentication auth) {
+        var user = (com.generadorpublicidad.auth.model.User) auth.getPrincipal();
+        var ad = adRepository.findByIdWithCampaign(id)
+                .orElseThrow(() -> new IllegalArgumentException("Anuncio no encontrado: " + id));
+        if (!ad.getCampaign().getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("Anuncio no encontrado: " + id);
+        }
         var mediaList = mediaRepository.findByAdIdOrderByCreatedAtAsc(id);
         for (var media : mediaList) {
             storageService.delete(media.getUrl());

@@ -1,9 +1,18 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useAuthStore } from './authStore'
 import { TOKEN_KEY } from '../utils/constants'
 
+const mockGet = vi.fn()
+
+vi.mock('../api/client', () => ({
+  default: {
+    get: (...args: any[]) => mockGet(...args),
+  },
+}))
+
 beforeEach(() => {
   localStorage.clear()
+  vi.clearAllMocks()
   useAuthStore.setState({
     user: null,
     token: null,
@@ -79,6 +88,34 @@ describe('authStore', () => {
       await useAuthStore.getState().verifyToken()
       expect(useAuthStore.getState().isVerifying).toBe(false)
       expect(useAuthStore.getState().isAuthenticated).toBe(false)
+    })
+
+    it('marca autenticado y carga usuario en éxito', async () => {
+      localStorage.setItem(TOKEN_KEY, 'valid-token')
+      const userData = { id: 1, name: 'Test', email: 'test@test.com', role: 'EDITOR' }
+      mockGet.mockResolvedValue({ data: userData })
+
+      await useAuthStore.getState().verifyToken()
+
+      const state = useAuthStore.getState()
+      expect(state.isVerifying).toBe(false)
+      expect(state.isAuthenticated).toBe(true)
+      expect(state.user).toEqual(userData)
+      expect(state.token).toBe('valid-token')
+    })
+
+    it('limpia sesión si el token es inválido', async () => {
+      localStorage.setItem(TOKEN_KEY, 'expired-token')
+      mockGet.mockRejectedValue(new Error('401 Unauthorized'))
+
+      await useAuthStore.getState().verifyToken()
+
+      const state = useAuthStore.getState()
+      expect(state.isVerifying).toBe(false)
+      expect(state.isAuthenticated).toBe(false)
+      expect(state.user).toBeNull()
+      expect(state.token).toBeNull()
+      expect(localStorage.getItem(TOKEN_KEY)).toBeNull()
     })
   })
 })

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "generador-publicidad.fullname" . }}-uploads
+  namespace: {{ include "generador-publicidad.namespace" . }}
+  labels:
+    {{- include "generador-publicidad.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.uploads.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.uploads.storage }}

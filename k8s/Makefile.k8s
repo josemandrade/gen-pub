@@ -1,0 +1,74 @@
+.PHONY: help dev prod build-images load-images delete logs status lint template template-prod
+
+HELM_DIR := helm/generador-publicidad
+RELEASE_NAME := generador-publicidad
+NAMESPACE := generador-publicidad
+
+help:
+	@echo "Uso:"
+	@echo "  make dev              — Instala/upgrade Helm chart (dev)"
+	@echo "  make prod             — Instala/upgrade Helm chart (prod)"
+	@echo "  build-images         — Construye imágenes Docker backend + frontend"
+	@echo "  load-images          — Carga imágenes en Minikube"
+	@echo "  delete               — Elimina el release de Helm"
+	@echo "  logs                 — Logs en tiempo real (stern o kubectl)"
+	@echo "  status               — Estado del release y recursos"
+	@echo "  lint                 — Valida el chart"
+	@echo "  template             — Renderiza templates (dev)"
+	@echo "  template-prod        — Renderiza templates (prod)"
+
+dev:
+	helm upgrade --install $(RELEASE_NAME) $(HELM_DIR) \
+		--namespace $(NAMESPACE) \
+		--create-namespace \
+		--values $(HELM_DIR)/values-dev.yaml \
+		--set clusterIP=$(shell minikube ip 2>/dev/null || echo "192.168.49.2")
+
+prod:
+	helm upgrade --install $(RELEASE_NAME) $(HELM_DIR) \
+		--namespace $(NAMESPACE) \
+		--create-namespace \
+		--values $(HELM_DIR)/values-prod.yaml \
+		--set clusterIP=$(shell minikube ip 2>/dev/null || echo "192.168.49.2")
+
+build-images:
+	docker compose build backend frontend
+
+load-images:
+	minikube image load generador-publicidad-backend:latest --overwrite=true || true
+	minikube image load generador-publicidad-frontend:latest --overwrite=true || true
+
+delete:
+	helm uninstall $(RELEASE_NAME) --namespace $(NAMESPACE) || true
+
+logs:
+	stern $(RELEASE_NAME) --namespace $(NAMESPACE)
+
+status:
+	@echo "=== Helm ==="
+	helm status $(RELEASE_NAME) --namespace $(NAMESPACE) 2>/dev/null || echo "No instalado"
+	@echo ""
+	@echo "=== Pods ==="
+	kubectl get pods --namespace $(NAMESPACE)
+	@echo ""
+	@echo "=== Services ==="
+	kubectl get svc --namespace $(NAMESPACE)
+	@echo ""
+	@echo "=== Ingress ==="
+	kubectl get ingress --namespace $(NAMESPACE)
+	@echo ""
+	@echo "=== PVC ==="
+	kubectl get pvc --namespace $(NAMESPACE)
+
+lint:
+	helm lint $(HELM_DIR)
+
+template:
+	helm template $(RELEASE_NAME) $(HELM_DIR) \
+		--values $(HELM_DIR)/values-dev.yaml \
+		--set clusterIP=$(shell minikube ip 2>/dev/null || echo "192.168.49.2")
+
+template-prod:
+	helm template $(RELEASE_NAME) $(HELM_DIR) \
+		--values $(HELM_DIR)/values-prod.yaml \
+		--set clusterIP=$(shell minikube ip 2>/dev/null || echo "192.168.49.2")

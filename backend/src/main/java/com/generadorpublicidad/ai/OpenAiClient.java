@@ -64,13 +64,11 @@ public class OpenAiClient implements AIClient {
                     .body(Map.class);
 
             return parseResponse(response);
+        } catch (AiServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error llamando a OpenAI: {}", e.getMessage());
-            return new GeneratedCopy(
-                    "Anuncio " + request.prompt().substring(0, Math.min(30, request.prompt().length())),
-                    "Descripción generada para: " + request.prompt(),
-                    List.of()
-            );
+            throw new AiServiceException("No se pudo generar el copy: " + e.getMessage(), e);
         }
     }
 
@@ -95,15 +93,17 @@ public class OpenAiClient implements AIClient {
         try {
             var choices = (List<Map<String, Object>>) responseBody.get("choices");
             if (choices == null || choices.isEmpty()) {
-                throw new RuntimeException("Sin respuesta de OpenAI");
+                throw new AiServiceException("Sin respuesta de OpenAI");
             }
             var message = (Map<String, Object>) choices.get(0).get("message");
             var content = (String) message.get("content");
             String json = extractJson(content);
             return objectMapper.readValue(json, GeneratedCopy.class);
+        } catch (AiServiceException e) {
+            throw e;
         } catch (Exception e) {
             log.error("Error parseando respuesta de OpenAI: {}", e.getMessage());
-            return new GeneratedCopy("Título sugerido", "Descripción sugerida", List.of());
+            throw new AiServiceException("Error al procesar respuesta de OpenAI: " + e.getMessage(), e);
         }
     }
 

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "generador-publicidad.fullname" . }}-frontend
+  namespace: {{ include "generador-publicidad.namespace" . }}
+  labels:
+    {{- include "generador-publicidad.labels" . | nindent 4 }}
+data:
+  config.js: |
+    window.__API_URL__ = '{{ include "generador-publicidad.backendDomain" . }}';
+  nginx.conf: |
+    server {
+        listen {{ .Values.frontend.port }};
+        server_name localhost;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+    }

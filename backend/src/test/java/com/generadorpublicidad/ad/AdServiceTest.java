@@ -7,18 +7,21 @@ import com.generadorpublicidad.ad.repository.AdRepository;
 import com.generadorpublicidad.ad.service.AdService;
 import com.generadorpublicidad.ai.AIClient;
 import com.generadorpublicidad.ai.GeneratedCopy;
+import com.generadorpublicidad.auth.model.User;
 import com.generadorpublicidad.campaign.model.Campaign;
 import com.generadorpublicidad.campaign.repository.CampaignRepository;
 import com.generadorpublicidad.media.dto.MediaResponse;
 import com.generadorpublicidad.media.model.Media;
 import com.generadorpublicidad.media.repository.MediaRepository;
 import com.generadorpublicidad.storage.StorageService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -26,6 +29,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -47,6 +51,9 @@ class AdServiceTest {
     @Mock
     private AIClient aiClient;
 
+    @Mock
+    private Authentication auth;
+
     @Captor
     private ArgumentCaptor<Ad> adCaptor;
 
@@ -55,28 +62,45 @@ class AdServiceTest {
 
     private AdService adService;
 
+    private User testUser;
+    private User otherUser;
+
+    @BeforeEach
+    void setUp() {
+        adService = new AdService(adRepository, campaignRepository, mediaRepository, storageService, aiClient);
+        testUser = User.builder().id(1L).name("Test").email("test@test.com").password("encoded").role(User.Role.EDITOR).build();
+        otherUser = User.builder().id(2L).name("Other").email("other@test.com").password("encoded").role(User.Role.EDITOR).build();
+        lenient().when(auth.getPrincipal()).thenReturn(testUser);
+    }
+
     private Campaign createCampaign() {
         var c = new Campaign();
         c.setId(1L);
         c.setName("Test Campaign");
+        c.setUser(testUser);
         return c;
     }
 
     private Ad createAd(Long id, Campaign campaign) {
-        var ad = Ad.builder()
+        return Ad.builder()
                 .id(id)
                 .campaign(campaign)
                 .title("Test Ad")
                 .description("Test description")
                 .status(Ad.Status.DRAFT)
                 .build();
-        return ad;
+    }
+
+    private Campaign createOtherUsersCampaign() {
+        var c = new Campaign();
+        c.setId(1L);
+        c.setName("Other's Campaign");
+        c.setUser(otherUser);
+        return c;
     }
 
     @Test
     void create_savesAndReturnsAd() {
-        adService = new AdService(adRepository, campaignRepository, mediaRepository, storageService, aiClient);
-
         var campaign = createCampaign();
         var request = new CreateAdRequest(1L, "New Ad", "Description");
 
@@ -89,7 +113,7 @@ class AdServiceTest {
             return ad;
         });
 
-        var response = adService.create(request);
+        var response = adService.create(request, auth);
 
         assertEquals(10L, response.id());
         assertEquals("New Ad", response.title());
@@ -100,14 +124,12 @@ class AdServiceTest {
 
     @Test
     void findByUserId_returnsAds() {
-        adService = new AdService(adRepository, campaignRepository, mediaRepository, storageService, aiClient);
-
         var campaign = createCampaign();
         var ad1 = createAd(1L, campaign);
         var ad2 = createAd(2L, campaign);
 
         when(adRepository.findByUserId(1L)).thenReturn(List.of(ad1, ad2));
-        when(mediaRepository.findByAdIdOrderByCreatedAtAsc(anyLong())).thenReturn(List.of());
+        when(mediaRepository.findByAdIdsOrderByCreatedAtAsc(any())).thenReturn(List.of());
 
         var result = adService.findByUserId(1L);
 
@@ -117,17 +139,15 @@ class AdServiceTest {
 
     @Test
     void update_modifiesAdFields() {
-        adService = new AdService(adRepository, campaignRepository, mediaRepository, storageService, aiClient);
-
         var campaign = createCampaign();
         var ad = createAd(1L, campaign);
         var updateRequest = new UpdateAdRequest("Updated Title", "Updated desc", "GENERATED");
 
-        when(adRepository.findById(1L)).thenReturn(Optional.of(ad));
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
         when(adRepository.save(any())).thenAnswer(inv -> inv.<Ad>getArgument(0));
         when(mediaRepository.findByAdIdOrderByCreatedAtAsc(1L)).thenReturn(List.of());
 
-        var result = adService.update(1L, updateRequest);
+        var result = adService.update(1L, updateRequest, auth);
 
         assertEquals("Updated Title", result.title());
         assertEquals("Updated desc", result.description());
@@ -136,13 +156,11 @@ class AdServiceTest {
 
     @Test
     void uploadMedia_savesFilesAndCreatesMedia() {
-        adService = new AdService(adRepository, campaignRepository, mediaRepository, storageService, aiClient);
-
         var campaign = createCampaign();
         var ad = createAd(1L, campaign);
         var file = mock(MultipartFile.class);
 
-        when(adRepository.findById(1L)).thenReturn(Optional.of(ad));
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
         when(storageService.store(any(), anyString())).thenReturn("/uploads/ads/1/file.jpg");
         when(file.getContentType()).thenReturn("image/jpeg");
         when(file.getOriginalFilename()).thenReturn("photo.jpg");
@@ -150,7 +168,7 @@ class AdServiceTest {
         when(mediaRepository.save(any())).thenAnswer(inv -> inv.<Media>getArgument(0));
         when(mediaRepository.findByAdIdOrderByCreatedAtAsc(1L)).thenReturn(List.of());
 
-        var result = adService.uploadMedia(1L, List.of(file));
+        var result = adService.uploadMedia(1L, List.of(file), auth);
 
         assertNotNull(result);
         verify(storageService).store(file, "ads/1");
@@ -158,9 +176,105 @@ class AdServiceTest {
     }
 
     @Test
-    void delete_removesAdAndMediaAndFiles() {
-        adService = new AdService(adRepository, campaignRepository, mediaRepository, storageService, aiClient);
+    void findByCampaignId_returnsAds() {
+        var campaign = createCampaign();
+        var ad1 = createAd(1L, campaign);
 
+        when(campaignRepository.findById(1L)).thenReturn(Optional.of(campaign));
+        when(adRepository.findByCampaignIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(ad1));
+        when(mediaRepository.findByAdIdsOrderByCreatedAtAsc(any())).thenReturn(List.of());
+
+        var result = adService.findByCampaignId(1L, auth);
+
+        assertEquals(1, result.size());
+        assertEquals("Test Ad", result.get(0).title());
+    }
+
+    @Test
+    void findById_returnsAd() {
+        var campaign = createCampaign();
+        var ad = createAd(1L, campaign);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
+        when(mediaRepository.findByAdIdOrderByCreatedAtAsc(1L)).thenReturn(List.of());
+
+        var result = adService.findById(1L, auth);
+
+        assertEquals("Test Ad", result.title());
+    }
+
+    @Test
+    void findById_throwsWhenNotFound() {
+        when(adRepository.findByIdWithCampaign(99L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> adService.findById(99L, auth));
+    }
+
+    @Test
+    void create_throwsWhenCampaignNotFound() {
+        var request = new CreateAdRequest(99L, "Ad", "Desc");
+        when(campaignRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> adService.create(request, auth));
+    }
+
+    @Test
+    void update_throwsWhenAdNotFound() {
+        when(adRepository.findByIdWithCampaign(99L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> adService.update(99L, new UpdateAdRequest("T", "D", null), auth));
+    }
+
+    @Test
+    void deleteMedia_removesMediaAndFile() {
+        var campaign = createCampaign();
+        var ad = createAd(1L, campaign);
+        var media = Media.builder()
+                .id(1L).ad(ad).url("/uploads/test.jpg").build();
+        when(mediaRepository.findById(1L)).thenReturn(Optional.of(media));
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
+
+        adService.deleteMedia(1L, auth);
+
+        verify(storageService).delete("/uploads/test.jpg");
+        verify(mediaRepository).delete(media);
+    }
+
+    @Test
+    void deleteMedia_throwsWhenNotFound() {
+        when(mediaRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(IllegalArgumentException.class, () -> adService.deleteMedia(99L, auth));
+    }
+
+    @Test
+    void uploadMedia_rejectsEmptyFile() {
+        var campaign = createCampaign();
+        var ad = createAd(1L, campaign);
+        var file = mock(MultipartFile.class);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
+        when(file.isEmpty()).thenReturn(true);
+
+        assertThrows(IllegalArgumentException.class, () -> adService.uploadMedia(1L, List.of(file), auth));
+    }
+
+    @Test
+    void uploadMedia_rejectsInvalidContentType() {
+        var campaign = createCampaign();
+        var ad = createAd(1L, campaign);
+        var file = mock(MultipartFile.class);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getContentType()).thenReturn("application/exe");
+        when(file.getSize()).thenReturn(100L);
+
+        assertThrows(IllegalArgumentException.class, () -> adService.uploadMedia(1L, List.of(file), auth));
+    }
+
+    @Test
+    void delete_removesAdAndMediaAndFiles() {
         var campaign = createCampaign();
         var ad = createAd(1L, campaign);
         var mediaItem = Media.builder()
@@ -169,9 +283,10 @@ class AdServiceTest {
                 .url("/uploads/ads/1/file.jpg")
                 .build();
 
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
         when(mediaRepository.findByAdIdOrderByCreatedAtAsc(1L)).thenReturn(List.of(mediaItem));
 
-        adService.delete(1L);
+        adService.delete(1L, auth);
 
         verify(storageService).delete("/uploads/ads/1/file.jpg");
         verify(mediaRepository).deleteByAdId(1L);
@@ -180,8 +295,6 @@ class AdServiceTest {
 
     @Test
     void generateCopy_delegatesToAiClient() {
-        adService = new AdService(adRepository, campaignRepository, mediaRepository, storageService, aiClient);
-
         var request = new com.generadorpublicidad.ad.dto.GenerateCopyRequest("prompt", List.of());
         var expected = new GeneratedCopy("Title", "Desc", List.of("kw1", "kw2"));
 
@@ -192,5 +305,102 @@ class AdServiceTest {
         assertEquals("Title", result.title());
         assertEquals("Desc", result.description());
         verify(aiClient).generateCopy(request);
+    }
+
+    @Test
+    void findByCampaignId_throwsWhenCampaignBelongsToOtherUser() {
+        var otherCampaign = createOtherUsersCampaign();
+        when(campaignRepository.findById(1L)).thenReturn(Optional.of(otherCampaign));
+
+        assertThrows(IllegalArgumentException.class, () -> adService.findByCampaignId(1L, auth));
+    }
+
+    @Test
+    void findById_throwsWhenAdBelongsToOtherUser() {
+        var otherCampaign = createOtherUsersCampaign();
+        var otherAd = createAd(1L, otherCampaign);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(otherAd));
+
+        assertThrows(IllegalArgumentException.class, () -> adService.findById(1L, auth));
+    }
+
+    @Test
+    void update_throwsWhenAdBelongsToOtherUser() {
+        var otherCampaign = createOtherUsersCampaign();
+        var otherAd = createAd(1L, otherCampaign);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(otherAd));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> adService.update(1L, new UpdateAdRequest("T", "D", null), auth));
+    }
+
+    @Test
+    void delete_throwsWhenAdBelongsToOtherUser() {
+        var otherCampaign = createOtherUsersCampaign();
+        var otherAd = createAd(1L, otherCampaign);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(otherAd));
+
+        assertThrows(IllegalArgumentException.class, () -> adService.delete(1L, auth));
+    }
+
+    @Test
+    void uploadMedia_throwsWhenAdBelongsToOtherUser() {
+        var otherCampaign = createOtherUsersCampaign();
+        var otherAd = createAd(1L, otherCampaign);
+        var file = mock(MultipartFile.class);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(otherAd));
+
+        assertThrows(IllegalArgumentException.class, () -> adService.uploadMedia(1L, List.of(file), auth));
+    }
+
+    @Test
+    void deleteMedia_throwsWhenMediaAdBelongsToOtherUser() {
+        var otherCampaign = createOtherUsersCampaign();
+        var otherAd = createAd(2L, otherCampaign);
+        var media = Media.builder().id(1L).ad(otherAd).url("/uploads/test.jpg").build();
+
+        when(mediaRepository.findById(1L)).thenReturn(Optional.of(media));
+        when(adRepository.findByIdWithCampaign(2L)).thenReturn(Optional.of(otherAd));
+
+        assertThrows(IllegalArgumentException.class, () -> adService.deleteMedia(1L, auth));
+    }
+
+    @Test
+    void create_throwsWhenCampaignBelongsToOtherUser() {
+        var otherCampaign = createOtherUsersCampaign();
+        var request = new CreateAdRequest(1L, "Ad", "Desc");
+
+        when(campaignRepository.findById(1L)).thenReturn(Optional.of(otherCampaign));
+
+        assertThrows(IllegalArgumentException.class, () -> adService.create(request, auth));
+    }
+
+    @Test
+    void uploadMedia_rejectsOversizedFile() {
+        var campaign = createCampaign();
+        var ad = createAd(1L, campaign);
+        var file = mock(MultipartFile.class);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
+        when(file.isEmpty()).thenReturn(false);
+        when(file.getSize()).thenReturn(60L * 1024 * 1024);
+
+        assertThrows(IllegalArgumentException.class, () -> adService.uploadMedia(1L, List.of(file), auth));
+    }
+
+    @Test
+    void update_throwsWhenInvalidStatus() {
+        var campaign = createCampaign();
+        var ad = createAd(1L, campaign);
+
+        when(adRepository.findByIdWithCampaign(1L)).thenReturn(Optional.of(ad));
+
+        var request = new UpdateAdRequest("T", "D", "ESTADO_FALSO");
+        var ex = assertThrows(IllegalArgumentException.class, () -> adService.update(1L, request, auth));
+        assertTrue(ex.getMessage().contains("Estado inválido"));
     }
 }

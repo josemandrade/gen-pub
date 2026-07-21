@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "generador-publicidad.fullname" . }}-db
+  namespace: {{ include "generador-publicidad.namespace" . }}
+  labels:
+    {{- include "generador-publicidad.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  serviceName: {{ include "generador-publicidad.fullname" . }}-db
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "generador-publicidad.labels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "generador-publicidad.labels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: postgres
+          image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"
+          imagePullPolicy: {{ .Values.postgresql.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.postgresql.port }}
+              name: postgres
+          envFrom:
+            - secretRef:
+                name: {{ include "generador-publicidad.fullname" . }}-db
+          resources:
+            {{- toYaml .Values.postgresql.resources | nindent 12 }}
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.secrets.db.username }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - {{ .Values.secrets.db.username }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+  volumeClaimTemplates:
+    - metadata:
+        name: pgdata
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: {{ .Values.postgresql.storageClassName }}
+        resources:
+          requests:
+            storage: {{ .Values.postgresql.storage }}
